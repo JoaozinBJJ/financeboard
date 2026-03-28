@@ -1,12 +1,17 @@
 {
   "version": 2,
   "builds": [
-    { "src": "public/**", "use": "@vercel/static" },
     { "src": "api/**/*.js", "use": "@vercel/node" },
-    { "src": "api/*.js", "use": "@vercel/node" }
+    { "src": "api/*.js", "use": "@vercel/node" },
+    { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/api/auth/register", "dest": "/api/auth/register.js" },
+    { "src": "/api/auth/login", "dest": "/api/auth/login.js" },
+    { "src": "/api/auth/me", "dest": "/api/auth/me.js" },
+    { "src": "/api/setup", "dest": "/api/setup.js" },
+    { "src": "/api/transactions", "dest": "/api/transactions/index.js" },
+    { "src": "/api/transactions/(.*)", "dest": "/api/transactions/[id].js" },
     { "src": "/login", "dest": "/public/login.html" },
     { "src": "/", "dest": "/public/index.html" },
     { "src": "/(.*)", "dest": "/public/$1" }
