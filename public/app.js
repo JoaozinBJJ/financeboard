@@ -97,16 +97,20 @@ function fmt(n) {
   return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function fmtCurrency(n) { return 'R$ ' + fmt(Math.abs(n)); }
+
 function fmtDate(iso) {
   if (!iso) return '';
-  const [y, m, d] = iso.split('-');
+  const date = new Date(iso);
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const y = date.getUTCFullYear();
   return `${d}/${m}/${y}`;
 }
 
 // ── CARDS ─────────────────────────────────────────────────
 function updateCards() {
-  const income  = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const expense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const income  = transactions.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
+  const expense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
   const balance = income - expense;
   const savingsRate = income > 0 ? Math.round(((income - expense) / income) * 100) : 0;
 
