@@ -1,5 +1,4 @@
-// api/transactions/[id].js
-import { getDB }             from '../../lib/db.js';
+import { query } from '../../lib/db.js';
 import { requireAuth, cors } from '../../lib/auth.js';
 
 export default async function handler(req, res) {
@@ -10,16 +9,13 @@ export default async function handler(req, res) {
   if (!payload) return;
 
   const { id } = req.query;
-  const db     = getDB();
 
-  // Check ownership
-  const check = await db.execute(
-    'SELECT id FROM transactions WHERE id = ? AND user_id = ?', [id, payload.sub]
+  const check = await query(
+    'SELECT id FROM transactions WHERE id = $1 AND user_id = $2', [id, payload.sub]
   );
   if (check.rows.length === 0)
     return res.status(404).json({ error: 'Transação não encontrada' });
 
-  // ── PUT: update ───────────────────────────────────────────
   if (req.method === 'PUT') {
     const { name = '', amount, type, category = 'Outros', date } = req.body || {};
 
@@ -30,20 +26,17 @@ export default async function handler(req, res) {
     if (isNaN(parsedAmount) || parsedAmount <= 0)
       return res.status(400).json({ error: 'Valor inválido' });
 
-    await db.execute(
-      'UPDATE transactions SET name=?, amount=?, type=?, category=?, date=? WHERE id=? AND user_id=?',
+    await query(
+      'UPDATE transactions SET name=$1, amount=$2, type=$3, category=$4, date=$5 WHERE id=$6 AND user_id=$7',
       [name.trim(), parsedAmount, type, category, date, id, payload.sub]
     );
 
-    const updated = await db.execute('SELECT * FROM transactions WHERE id = ?', [id]);
+    const updated = await query('SELECT * FROM transactions WHERE id = $1', [id]);
     return res.status(200).json(updated.rows[0]);
   }
 
-  // ── DELETE ────────────────────────────────────────────────
   if (req.method === 'DELETE') {
-    await db.execute(
-      'DELETE FROM transactions WHERE id = ? AND user_id = ?', [id, payload.sub]
-    );
+    await query('DELETE FROM transactions WHERE id = $1 AND user_id = $2', [id, payload.sub]);
     return res.status(200).json({ deleted: id });
   }
 
