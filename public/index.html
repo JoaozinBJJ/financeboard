@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceBoard — Painel Pessoal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── EXTRA AUTH STYLES ────────────────────────────────── */
+    .user-menu {
+      position: relative;
+    }
+    .user-avatar-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 10px 4px 4px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+    .user-avatar-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
+    .user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; letter-spacing: .04em;
+      flex-shrink: 0;
+    }
+    .user-name { font-size: 12px; font-weight: 600; color: var(--text-primary); max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .user-dropdown {
+      position: absolute; right: 0; top: calc(100% + 8px);
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      min-width: 200px;
+      padding: 6px;
+      display: none;
+      z-index: 100;
+      animation: dropIn .15s ease;
+    }
+    .user-dropdown.open { display: block; }
+    @keyframes dropIn { from { opacity:0; transform: translateY(-4px); } to { opacity:1; transform: translateY(0); } }
+
+    .dropdown-info {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+    }
+    .dropdown-name  { font-size: 13px; font-weight: 600; }
+    .dropdown-email { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+
+    .dropdown-btn {
+      width: 100%; text-align: left;
+      padding: 9px 12px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      color: var(--text-primary);
+      transition: background .15s;
+      display: block; cursor: pointer; border: none; background: none; font-family: inherit;
+    }
+    .dropdown-btn:hover { background: var(--bg-hover); }
+    .dropdown-btn--danger { color: #A32D2D; }
+    [data-theme="dark"] .dropdown-btn--danger { color: #F09595; }
+    .dropdown-btn--danger:hover { background: var(--red-light); }
+
+    /* Loading overlay */
+    #loadingOverlay {
+      position: fixed; inset: 0; z-index: 999;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 12px;
+      transition: opacity .3s;
+    }
+    #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
+    .loader-logo {
+      width: 48px; height: 48px;
+      background: var(--accent); border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: #fff; letter-spacing: .05em;
+      animation: pulse 1.2s ease infinite;
+    }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    .loader-text { font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); }
+  </style>
+</head>
+<body>
+
+  <!-- LOADING OVERLAY -->
+  <div id="loadingOverlay">
+    <div class="loader-logo">FB</div>
+    <p class="loader-text">Carregando...</p>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header__logo">
+      <span class="logo-mark">FB</span>
+      <span class="logo-text">FinanceBoard</span>
+    </div>
+    <div class="header__right">
+      <span class="header__month" id="currentMonth"></span>
+      <button class="theme-toggle" id="themeToggle" aria-label="Alternar tema">◐</button>
+
+      <!-- User menu -->
+      <div class="user-menu" id="userMenu">
+        <button class="user-avatar-btn" id="userAvatarBtn" aria-expanded="false">
+          <div class="user-avatar" id="userAvatar">??</div>
+          <span class="user-name" id="userNameLabel">–</span>
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="dropdown-info">
+            <p class="dropdown-name"  id="dropdownName">–</p>
+            <p class="dropdown-email" id="dropdownEmail">–</p>
+          </div>
+          <button class="dropdown-btn dropdown-btn--danger" id="btnLogout">🚪 Sair da conta</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- SUMMARY CARDS -->
+    <section class="cards-grid" aria-label="Resumo financeiro">
+      <div class="card card--balance" data-testid="card-balance">
+        <p class="card__label">Saldo atual</p>
+        <p class="card__value" id="val-balance" data-testid="value-balance">R$ 0,00</p>
+        <span class="card__badge" id="badge-balance">—</span>
+      </div>
+      <div class="card card--income" data-testid="card-income">
+        <p class="card__label">Receitas</p>
+        <p class="card__value" id="val-income" data-testid="value-income">R$ 0,00</p>
+        <span class="card__badge card__badge--up" id="badge-income">0 entradas</span>
+      </div>
+      <div class="card card--expense" data-testid="card-expense">
+        <p class="card__label">Despesas</p>
+        <p class="card__value" id="val-expense" data-testid="value-expense">R$ 0,00</p>
+        <span class="card__badge card__badge--down" id="badge-expense">0 saídas</span>
+      </div>
+      <div class="card card--savings" data-testid="card-savings">
+        <p class="card__label">Taxa de economia</p>
+        <p class="card__value" id="val-savings" data-testid="value-savings">0%</p>
+        <span class="card__badge card__badge--up" id="badge-savings">receitas - despesas</span>
+      </div>
+    </section>
+
+    <!-- BOTTOM GRID -->
+    <div class="bottom-grid">
+
+      <!-- CHART -->
+      <section class="panel">
+        <div class="panel__header">
+          <h2 class="panel__title">Gastos por categoria</h2>
+        </div>
+        <div class="chart" id="expenseChart" data-testid="expense-chart">
+          <p class="empty-msg">Nenhuma despesa registrada.</p>
+        </div>
+      </section>
+
+      <!-- TRANSACTIONS -->
+      <section class="panel">
+        <div class="panel__header">
+          <h2 class="panel__title">Transações</h2>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="all"     data-testid="filter-all">Todas</button>
+              <button class="filter-btn"        data-filter="income"  data-testid="filter-income">Receitas</button>
+              <button class="filter-btn"        data-filter="expense" data-testid="filter-expense">Despesas</button>
+            </div>
+            <button class="btn-add" id="btnAdd" data-testid="btn-add">+ Nova</button>
+          </div>
+        </div>
+        <ul class="transactions" id="transactionList" data-testid="transaction-list"></ul>
+        <p class="empty-msg" id="emptyMsg">Nenhuma transação. Clique em <strong>+ Nova</strong> para começar.</p>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modalOverlay" aria-hidden="true">
+    <div class="modal" data-testid="modal">
+      <div class="modal__header">
+        <h3 class="modal__title" id="modalTitle">Nova transação</h3>
+        <button class="modal__close" id="modalClose" aria-label="Fechar">✕</button>
+      </div>
+      <form class="modal__form" id="txForm" novalidate>
+        <input type="hidden" id="editId" />
+
+        <div class="form-group">
+          <label class="form-label" for="txName">Descrição</label>
+          <input class="form-input" type="text" id="txName" data-testid="input-name"
+            placeholder="Ex: Salário, Aluguel, Supermercado…" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="txAmount">Valor (R$)</label>
+            <input class="form-input" type="number" id="txAmount" data-testid="input-amount"
+              placeholder="0,00" min="0.01" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="txDate">Data</label>
+            <input class="form-input" type="date" id="txDate" data-testid="input-date" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo</label>
+            <div class="type-toggle">
+              <button type="button" class="type-btn type-btn--income active" data-type="income" data-testid="type-income">↑ Receita</button>
+              <button type="button" class="type-btn type-btn--expense"       data-type="expense" data-testid="type-expense">↓ Despesa</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="txCategory">Categoria</label>
+            <select class="form-input" id="txCategory" data-testid="input-category">
+              <option value="Salário">💼 Salário</option>
+              <option value="Freelance">💻 Freelance</option>
+              <option value="Investimentos">📈 Investimentos</option>
+              <option value="Moradia">🏠 Moradia</option>
+              <option value="Alimentação">🛒 Alimentação</option>
+              <option value="Transporte">🚗 Transporte</option>
+              <option value="Saúde">💊 Saúde</option>
+              <option value="Lazer">🎮 Lazer</option>
+              <option value="Educação">📚 Educação</option>
+              <option value="Outros">📦 Outros</option>
+            </select>
+          </div>
+        </div>
+
+        <p class="form-error" id="formError"></p>
+
+        <div class="modal__actions">
+          <button type="button" class="btn btn--ghost" id="btnCancel">Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btnSubmit" data-testid="btn-submit">Adicionar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
