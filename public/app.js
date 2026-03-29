@@ -144,7 +144,7 @@ function updateChart() {
     return;
   }
   const byCategory = {};
-  expenses.forEach(t => { byCategory[t.category] = (byCategory[t.category] || 0) + t.amount; });
+  expenses.forEach(t => { byCategory[t.category] = (byCategory[t.category] || 0) + parseFloat(t.amount); });
   const total  = Object.values(byCategory).reduce((s, v) => s + v, 0);
   const sorted = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).slice(0, 5);
   container.innerHTML = '';
